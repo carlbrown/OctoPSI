@@ -20,6 +20,16 @@ describe 'Octopsi' do
 end
 
 describe 'Octopsi' do
+  it 'Handles blog directory as an argument' do
+    parent = OctoPSI::OctoPSI.new(File.expand_path(File.dirname(__FILE__) + '/fixtures/basic_blog_test/Blog1'))
+    parent.blogs.should be
+    parent.blogs.keys.count.should==1
+    parent.blogs['Blog1'].name.should == 'Blog1'
+    parent.blogs['Blog1'].get_posts(10).count.should==3
+  end
+end
+
+describe 'Octopsi' do
   it 'Gets Recent Posts Response' do
     parent = OctoPSI::OctoPSI.new(File.expand_path(File.dirname(__FILE__) + '/fixtures/basic_blog_test/'))
     parent.blogs.should be
@@ -31,8 +41,34 @@ describe 'Octopsi' do
 
     recents = parent.getRecentPosts('Blog1',nil,nil,30)
     recents.count.should == 3
+
+    recents3 = parent.getRecentPosts('anything_the_user_picks',nil,nil,30)
+    recents3.count.should == 0
+
   end
 end
+
+describe 'Octopsi' do
+  it 'Single Blog Gets Recent Posts Response' do
+    parent = OctoPSI::OctoPSI.new(File.expand_path(File.dirname(__FILE__) + '/fixtures/basic_blog_test/Blog1/'))
+    parent.blogs.should be
+    parent.blogs.keys.count.should==1
+    blog = parent.blogs['Blog1']
+    blog.should be
+    blog.name.should == 'Blog1'
+    blog.base_url.should == 'http://example.com'
+
+    recents = parent.getRecentPosts('Blog1',nil,nil,30)
+    recents.count.should == 3
+
+    recents2 = parent.getRecentPosts(0,nil,nil,30)
+    recents2.count.should == 3
+
+    recents3 = parent.getRecentPosts('anything_the_user_picks',nil,nil,30)
+    recents3.count.should == 3
+  end
+end
+
 
 describe 'Octopsi' do
   it 'Gets Post Info' do
@@ -289,7 +325,7 @@ end
 
 
 describe 'Octopsi' do
-  it 'Uploads Image' do
+  it 'Delete fails' do
     Dir.mktmpdir do |dir|
       # puts "Tmpdir is #{dir}"
       Dir.mkdir(File.join(dir, 'base'))

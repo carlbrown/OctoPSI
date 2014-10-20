@@ -4,23 +4,35 @@ require "#{File.dirname(__FILE__)}/post"
 module OctoPSI
   class OctoPSI
 
+    def is_a_blog_directory(potential_blog_dir)
+      potential_blog_source_dir = File.join(potential_blog_dir,'source')
+      return false unless File.exists?(potential_blog_source_dir)
+      return false unless File.directory?(potential_blog_source_dir)
+      return false unless File.exists?(File.join(potential_blog_source_dir, '_posts'))
+      return false unless File.directory?(File.join(potential_blog_source_dir, '_posts'))
+      return true
+    end
+
     def initialize(blog_parent_dir)
-      @source_dir = blog_parent_dir
       @blogs={}
-      Dir.foreach(blog_parent_dir) do |entry|
-        next if entry == '.' or entry == '..'
-        next unless File.directory?(File.join(blog_parent_dir, entry))
-        potential_blog_dir = File.join(File.join(blog_parent_dir, entry),'source')
-        next unless File.exists?(potential_blog_dir)
-        next unless File.directory?(potential_blog_dir)
-        next unless File.exists?(File.join(potential_blog_dir, '_posts'))
-        next unless File.directory?(File.join(potential_blog_dir, '_posts'))
-        new_blog=Blog.new(potential_blog_dir)
-        if new_blog
-          @blogs[new_blog.name] = new_blog
+      #If we're given a blog directory, make a single-blog parent
+      if is_a_blog_directory(blog_parent_dir)
+        @source_dir = File.expand_path("..",blog_parent_dir)
+        single_blog=Blog.new(File.join(blog_parent_dir,'source'))
+        if single_blog
+          @blogs[single_blog.name] = single_blog
+        end
+      else
+        @source_dir = blog_parent_dir
+        Dir.foreach(blog_parent_dir) do |entry|
+          next if entry == '.' or entry == '..'
+          next unless is_a_blog_directory(File.join(blog_parent_dir, entry))
+          new_blog=Blog.new(File.join(blog_parent_dir, entry,'source'))
+          if new_blog
+            @blogs[new_blog.name] = new_blog
+          end
         end
       end
-
     end
 
     def blogs
@@ -28,7 +40,14 @@ module OctoPSI
     end
 
     def getRecentPosts(blogId, user, password, limit)
-      blog = @blogs[blogId]
+      if (@blogs.count==1)
+        blog=@blogs.values[0]
+      else
+        blog = @blogs[blogId]
+      end
+      unless blog
+        return []
+      end
       response = blog.get_recent_posts_response(limit)
     end
 
